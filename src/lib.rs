@@ -6,9 +6,11 @@ extern crate wasm_bindgen;
 mod utils;
 
 use cfg_if::cfg_if;
+use reqwest::Error;
 use select::document::Document;
 use select::predicate::Name;
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_futures::{self, spawn_local};
 
 cfg_if! {
 		// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -21,17 +23,23 @@ cfg_if! {
 }
 
 #[wasm_bindgen]
-pub async fn greet() -> String {
-	let url = "https://www.lexico.com/en/definition/sound";
+pub fn greet() {
+	spawn_local(async {
+		let x = get().await;
+		assert_eq!(x, "he");
+	})	
+}
 
-	let mut resp = reqwest::get(url).await.text().await;
-	return resp;
-	// assert!(resp.status().is_success());
+async fn get() -> Result<(), Error> {
+	let request_url = format!(
+		"https://api.github.com/repos/{owner}/{repo}/stargazers",
+		owner = "rust-lang-nursery",
+		repo = "rust-cookbook"
+	);
+	println!("{}", request_url);
+	let response = reqwest::get(&request_url).await?;
 
-	// Document::from_read(resp)
-	// 	.unwrap()
-	// 	.find(Name("a"))
-	// 	.filter_map(|n| n.attr("href"))
-	// 	.for_each(|x| println!("{}", x));
-	// "Hello, wasm-worker modified!".to_string()
+	let users = response.text().await?;
+	println!("{:?}", users);
+	Ok(())
 }
