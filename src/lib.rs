@@ -22,12 +22,18 @@ cfg_if! {
 		}
 }
 
-#[wasm_bindgen]
-pub fn greet() {
-	spawn_local(async {
-		let x = get().await;
-		assert_eq!(x, "he");
-	})	
+async fn greet() -> Result<(), > {
+  let res = reqwest::get("https://www.rust-lang.org/en-US/")
+    .await?
+    .text()
+    .await?;
+
+  Document::from(res.as_str())
+    .find(Name("a"))
+    .filter_map(|n| n.attr("href"))
+    .for_each(|x| println!("{}", x));
+
+  Ok(())
 }
 
 async fn get() -> Result<(), Error> {
